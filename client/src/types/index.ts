@@ -6,7 +6,7 @@ export interface User {
 
 export type GameDifficulty = "Beginner" | "Intermediate" | "Advanced";
 export type GameComplexity = "Basic" | "Normal" | "Complex";
-export type GameFormat = "Quiz" | "Flashcards" | "Scenario" | "Puzzle" | "Racing" | "RPG" | "Simulation" | "Other";
+export type GameFormat = "Quiz" | "Flashcards" | "Memory" | "Puzzle" | "Racing" | "Simulation" | "Scenario" | "RPG" | "Strategy" | "Adventure" | "Other";
 
 export interface Game {
   id: string;

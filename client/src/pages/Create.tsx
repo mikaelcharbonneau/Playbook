@@ -8,6 +8,7 @@ import { ChatMessage, Game, GameDifficulty, GameFormat, GameComplexity } from "@
 import { cn } from "@/lib/utils";
 import { useGames } from "@/hooks/useGames";
 import { GameModal } from "@/components/GameModal";
+import { TOPICS, FORMATS_BY_COMPLEXITY } from "@/lib/constants";
 
 export default function Create() {
   const { addGame } = useGames();
@@ -30,6 +31,14 @@ export default function Create() {
   const [complexity, setComplexity] = useState<GameComplexity>("Basic");
   const [format, setFormat] = useState<GameFormat>("Quiz");
   const [duration, setDuration] = useState("5");
+
+  // Update format when complexity changes
+  useEffect(() => {
+    const availableFormats = FORMATS_BY_COMPLEXITY[complexity];
+    if (!availableFormats.includes(format)) {
+      setFormat(availableFormats[0]);
+    }
+  }, [complexity]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -108,12 +117,16 @@ export default function Create() {
         
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="col-span-2">
-            <Input 
-              placeholder="Topic (e.g. Algebra, French Animals)" 
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              className="rounded-xl bg-muted/30 border-transparent focus:bg-white transition-all"
-            />
+            <Select value={topic} onValueChange={setTopic}>
+              <SelectTrigger className="rounded-xl bg-muted/30 border-transparent">
+                <SelectValue placeholder="Select Topic" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[200px]">
+                {TOPICS.map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Select value={difficulty} onValueChange={(v: any) => setDifficulty(v)}>
             <SelectTrigger className="rounded-xl bg-muted/30 border-transparent">
@@ -140,9 +153,9 @@ export default function Create() {
               <SelectValue placeholder="Format" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Quiz">Quiz</SelectItem>
-              <SelectItem value="Flashcards">Flashcards</SelectItem>
-              <SelectItem value="Scenario">Scenario</SelectItem>
+              {FORMATS_BY_COMPLEXITY[complexity].map((f) => (
+                <SelectItem key={f} value={f}>{f}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
