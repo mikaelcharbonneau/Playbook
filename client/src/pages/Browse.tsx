@@ -98,7 +98,7 @@ export default function Browse() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Difficulty</Label>
+                  <Label>Difficulty (Knowledge Level)</Label>
                   <div className="flex gap-2">
                     {["Beginner", "Intermediate", "Advanced"].map((diff) => (
                       <Badge
@@ -110,6 +110,24 @@ export default function Browse() {
                         })}
                       >
                         {diff}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Complexity (Game Mechanics)</Label>
+                  <div className="flex gap-2">
+                    {["Basic", "Normal", "Complex"].map((comp) => (
+                      <Badge
+                        key={comp}
+                        variant={activeFilters.complexity === comp ? "default" : "outline"}
+                        className="cursor-pointer px-4 py-2 rounded-full text-sm"
+                        onClick={() => handleFilterChange({ 
+                          complexity: activeFilters.complexity === comp ? undefined : comp as any 
+                        })}
+                      >
+                        {comp}
                       </Badge>
                     ))}
                   </div>

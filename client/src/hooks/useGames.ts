@@ -55,6 +55,10 @@ export function useGames() {
       result = result.filter((game) => game.difficulty === filters.difficulty);
     }
 
+    if (filters.complexity) {
+      result = result.filter((game) => game.complexity === filters.complexity);
+    }
+
     if (filters.format) {
       result = result.filter((game) => game.format === filters.format);
     }

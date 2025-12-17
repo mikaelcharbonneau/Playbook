@@ -48,6 +48,9 @@ export function GameCard({
               {game.difficulty}
             </Badge>
             <Badge variant="secondary" className="bg-white/20 backdrop-blur-md text-white border-white/20 hover:bg-white/30">
+              {game.complexity}
+            </Badge>
+            <Badge variant="secondary" className="bg-white/20 backdrop-blur-md text-white border-white/20 hover:bg-white/30">
               <Clock size={12} className="mr-1" /> {game.durationMinutes}m
             </Badge>
           </div>
@@ -165,6 +168,9 @@ export function GameCard({
             </Badge>
              <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-[10px] h-5 px-2 shadow-sm">
               {game.difficulty}
+            </Badge>
+             <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-[10px] h-5 px-2 shadow-sm">
+              {game.complexity}
             </Badge>
         </div>
       </div>

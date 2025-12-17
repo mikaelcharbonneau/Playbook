@@ -5,7 +5,8 @@ export interface User {
 }
 
 export type GameDifficulty = "Beginner" | "Intermediate" | "Advanced";
-export type GameFormat = "Quiz" | "Flashcards" | "Scenario" | "Puzzle" | "Other";
+export type GameComplexity = "Basic" | "Normal" | "Complex";
+export type GameFormat = "Quiz" | "Flashcards" | "Scenario" | "Puzzle" | "Racing" | "RPG" | "Simulation" | "Other";
 
 export interface Game {
   id: string;
@@ -14,6 +15,7 @@ export interface Game {
   topic: string;
   tags: string[];
   difficulty: GameDifficulty;
+  complexity: GameComplexity;
   durationMinutes: number;
   createdBy: User;
   createdAt: string;
@@ -28,6 +30,7 @@ export interface Game {
 export interface FilterState {
   topic?: string;
   difficulty?: GameDifficulty;
+  complexity?: GameComplexity;
   durationRange?: [number, number];
   format?: GameFormat;
   language?: string;

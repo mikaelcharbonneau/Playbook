@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Send, Sparkles, Save, Play } from "lucide-react";
-import { ChatMessage, Game, GameDifficulty, GameFormat } from "@/types";
+import { ChatMessage, Game, GameDifficulty, GameFormat, GameComplexity } from "@/types";
 import { cn } from "@/lib/utils";
 import { useGames } from "@/hooks/useGames";
 import { GameModal } from "@/components/GameModal";
@@ -27,6 +27,7 @@ export default function Create() {
   // Form State
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState<GameDifficulty>("Beginner");
+  const [complexity, setComplexity] = useState<GameComplexity>("Basic");
   const [format, setFormat] = useState<GameFormat>("Quiz");
   const [duration, setDuration] = useState("5");
 
@@ -57,10 +58,11 @@ export default function Create() {
       const newGame: Game = {
         id: `gen-${Date.now()}`,
         title: `Generated: ${topic || "Learning"} Game`,
-        description: `A ${difficulty} level ${format} about ${topic || "various topics"}.`,
+        description: `A ${difficulty} level ${format} about ${topic || "various topics"} with ${complexity} mechanics.`,
         topic: topic || "General",
-        tags: ["AI Generated", format, difficulty],
+        tags: ["AI Generated", format, difficulty, complexity],
         difficulty,
+        complexity,
         durationMinutes: parseInt(duration),
         createdBy: { id: "ai", username: "AI Assistant", avatarUrl: "/images/avatar-placeholder.jpg" },
         createdAt: new Date().toISOString(),
@@ -121,6 +123,16 @@ export default function Create() {
               <SelectItem value="Beginner">Beginner</SelectItem>
               <SelectItem value="Intermediate">Intermediate</SelectItem>
               <SelectItem value="Advanced">Advanced</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={complexity} onValueChange={(v: any) => setComplexity(v)}>
+            <SelectTrigger className="rounded-xl bg-muted/30 border-transparent">
+              <SelectValue placeholder="Complexity" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Basic">Basic (Quiz, Flashcards)</SelectItem>
+              <SelectItem value="Normal">Normal (Interactive)</SelectItem>
+              <SelectItem value="Complex">Complex (RPG, Mission)</SelectItem>
             </SelectContent>
           </Select>
           <Select value={format} onValueChange={(v: any) => setFormat(v)}>
