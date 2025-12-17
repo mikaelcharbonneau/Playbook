@@ -43,6 +43,7 @@ export const games = mysqlTable("games", {
   likesCount: int("likesCount").notNull().default(0),
   playsCount: int("playsCount").notNull().default(0),
   createdById: int("createdById").notNull(),
+  gameContent: text("gameContent"), // JSON string containing the actual game data (questions, scenarios, etc.)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

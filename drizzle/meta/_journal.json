@@ -15,6 +15,13 @@
       "when": 1765987428286,
       "tag": "0001_classy_marvex",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1765988029841,
+      "tag": "0002_serious_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

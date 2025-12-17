@@ -8,6 +8,8 @@ import { ChatMessage, Game, GameDifficulty, GameFormat, GameComplexity } from "@
 import { cn } from "@/lib/utils";
 import { useGames } from "@/hooks/useGames";
 import { GameModal } from "@/components/GameModal";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import { TOPICS, FORMATS_BY_COMPLEXITY } from "@/lib/constants";
 
 export default function Create() {
@@ -48,8 +50,15 @@ export default function Create() {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  const generateGameMutation = trpc.ai.generateGame.useMutation();
+  const { refetch: refetchGames } = useGames();
+
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
+    if (!topic) {
+      toast.error("Please select a topic first");
+      return;
+    }
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -62,39 +71,42 @@ export default function Create() {
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI delay
-    setTimeout(() => {
-      const newGame: Game = {
-        id: Date.now(),
-        title: `Generated: ${topic || "Learning"} Game`,
-        description: `A ${difficulty} level ${format} about ${topic || "various topics"} with ${complexity} mechanics.`,
-        topic: topic || "General",
-        tags: ["AI Generated", format, difficulty, complexity],
+    try {
+      const result = await generateGameMutation.mutateAsync({
+        topic,
         difficulty,
         complexity,
-        durationMinutes: parseInt(duration),
-        createdBy: { id: 0, username: "AI Assistant", avatarUrl: "/images/avatar-placeholder.jpg" },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        likesCount: 0,
-        playsCount: 0,
-        isBookmarked: false,
-        thumbnailUrl: "/images/game-thumb-science.jpg",
         format,
+        durationMinutes: parseInt(duration),
         language: "English",
-      };
+        additionalInstructions: text,
+      });
+
+      // Refresh games list
+      await refetchGames();
 
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "ai",
-        content: `I've created a ${difficulty} ${format} game about ${topic || "your request"}! It takes about ${duration} minutes.`,
+        content: `✨ I've created "${result.title}"! ${result.description} Click Preview to play it now, or find it in your Feed.`,
         timestamp: Date.now(),
-        relatedGame: newGame,
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+      toast.success("Game created successfully!");
+    } catch (error) {
+      const errorMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "ai",
+        content: "Sorry, I encountered an error while creating your game. Please try again.",
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+      toast.error("Failed to generate game");
+      console.error(error);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleGenerateFromSettings = () => {
