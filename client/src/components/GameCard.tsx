@@ -8,8 +8,8 @@ interface GameCardProps {
   game: Game;
   layoutType?: "feed" | "grid";
   onPlay?: (game: Game) => void;
-  onLike?: (gameId: string) => void;
-  onBookmark?: (gameId: string) => void;
+  onLike?: (gameId: number) => void;
+  onBookmark?: (gameId: number) => void;
 }
 
 export function GameCard({

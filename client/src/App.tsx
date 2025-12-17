@@ -8,8 +8,8 @@ import Feed from "./pages/Feed";
 import Create from "./pages/Create";
 import Browse from "./pages/Browse";
 import { BottomNav } from "./components/BottomNav";
-
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path="/" component={Feed} />

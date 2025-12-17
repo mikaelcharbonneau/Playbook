@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Feed() {
-  const { games, toggleLike, toggleBookmark } = useGames();
+  const { games, toggleBookmark } = useGames();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
   return (
@@ -35,7 +35,6 @@ export default function Feed() {
                 game={game}
                 layoutType="feed"
                 onPlay={setSelectedGame}
-                onLike={toggleLike}
                 onBookmark={toggleBookmark}
               />
             </div>

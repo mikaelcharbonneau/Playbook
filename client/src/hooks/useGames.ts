@@ -1,40 +1,54 @@
-import { useState, useEffect } from "react";
-import { Game, FilterState } from "@/types";
-import { MOCK_GAMES } from "@/lib/mock-data";
+import { useMemo } from "react";
+import { trpc } from "@/lib/trpc";
+import type { FilterState, Game } from "@/types";
+import type { GameWithBookmark } from "@shared/types";
 
 export function useGames() {
-  const [games, setGames] = useState<Game[]>(MOCK_GAMES);
-  const [filteredGames, setFilteredGames] = useState<Game[]>(MOCK_GAMES);
+  const { data: rawGames = [], isLoading, refetch } = trpc.games.list.useQuery();
+  
+  // Transform backend data to frontend Game type
+  const games: Game[] = useMemo(() => {
+    return rawGames.map(game => ({
+      ...game,
+      tags: game.tags,
+      createdBy: {
+        id: game.createdById,
+        username: "User", // We don't have user data yet
+        avatarUrl: "/images/avatar-placeholder.jpg",
+      },
+    }));
+  }, [rawGames]);
+  const createGameMutation = trpc.games.create.useMutation();
+  const toggleBookmarkMutation = trpc.bookmarks.toggle.useMutation();
+  const incrementPlaysMutation = trpc.games.incrementPlays.useMutation();
 
-  const toggleLike = (gameId: string) => {
-    setGames((prev) =>
-      prev.map((game) =>
-        game.id === gameId
-          ? {
-              ...game,
-              likesCount: game.isBookmarked // Simulating like toggle logic for demo
-                ? game.likesCount
-                : game.likesCount + 1, // Simplified logic
-            }
-          : game
-      )
-    );
+  const addGame = async (game: Omit<Game, "id" | "createdAt" | "updatedAt" | "isBookmarked" | "likesCount" | "playsCount" | "createdBy">) => {
+    await createGameMutation.mutateAsync({
+      title: game.title,
+      description: game.description,
+      topic: game.topic,
+      tags: game.tags,
+      difficulty: game.difficulty,
+      complexity: game.complexity,
+      format: game.format,
+      durationMinutes: game.durationMinutes,
+      language: game.language,
+      thumbnailUrl: game.thumbnailUrl ?? undefined,
+    });
+    await refetch();
   };
 
-  const toggleBookmark = (gameId: string) => {
-    setGames((prev) =>
-      prev.map((game) =>
-        game.id === gameId ? { ...game, isBookmarked: !game.isBookmarked } : game
-      )
-    );
+  const toggleBookmark = async (gameId: number) => {
+    await toggleBookmarkMutation.mutateAsync({ gameId });
+    await refetch();
   };
 
-  const addGame = (newGame: Game) => {
-    setGames((prev) => [newGame, ...prev]);
+  const incrementPlays = async (gameId: number) => {
+    await incrementPlaysMutation.mutateAsync({ gameId });
   };
 
-  const filterGames = (filters: FilterState) => {
-    let result = [...games];
+  const filterGames = (filters: FilterState): Game[] => {
+    let result = games;
 
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
@@ -42,8 +56,7 @@ export function useGames() {
         (game) =>
           game.title.toLowerCase().includes(query) ||
           game.description.toLowerCase().includes(query) ||
-          game.topic.toLowerCase().includes(query) ||
-          game.createdBy.username.toLowerCase().includes(query)
+          game.topic.toLowerCase().includes(query)
       );
     }
 
@@ -74,40 +87,16 @@ export function useGames() {
       );
     }
 
-    if (filters.sortBy) {
-      switch (filters.sortBy) {
-        case "trending":
-          result.sort((a, b) => b.playsCount - a.playsCount); // Simplified trending
-          break;
-        case "most_played":
-          result.sort((a, b) => b.playsCount - a.playsCount);
-          break;
-        case "newest":
-          result.sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          break;
-      }
-    }
-
-    setFilteredGames(result);
+    return result;
   };
-
-  // Re-run filter when games change
-  useEffect(() => {
-    // In a real app, we'd persist the current filter state and re-apply it
-    // For now, we just update the filtered list to include any new games if no filter is active
-    // or re-apply a basic sync.
-    setFilteredGames(games); 
-  }, [games]);
 
   return {
     games,
-    filteredGames,
-    toggleLike,
-    toggleBookmark,
+    isLoading,
     addGame,
+    toggleBookmark,
+    incrementPlays,
     filterGames,
+    refetch,
   };
 }

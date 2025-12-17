@@ -1,40 +1,20 @@
+import type { GameWithBookmark, GameDifficulty, GameComplexity, GameFormat, FilterState as SharedFilterState } from "@shared/types";
+
+export type { GameDifficulty, GameComplexity, GameFormat };
+
+// Re-export the shared game type with adjusted structure for frontend
+export type Game = Omit<GameWithBookmark, "tags" | "createdById"> & {
+  tags: string[];
+  createdBy: User;
+};
+
 export interface User {
-  id: string;
+  id: number;
   username: string;
   avatarUrl?: string;
 }
 
-export type GameDifficulty = "Beginner" | "Intermediate" | "Advanced";
-export type GameComplexity = "Basic" | "Normal" | "Complex";
-export type GameFormat = "Quiz" | "Flashcards" | "Memory" | "Puzzle" | "Racing" | "Simulation" | "Scenario" | "RPG" | "Strategy" | "Adventure" | "Other";
-
-export interface Game {
-  id: string;
-  title: string;
-  description: string;
-  topic: string;
-  tags: string[];
-  difficulty: GameDifficulty;
-  complexity: GameComplexity;
-  durationMinutes: number;
-  createdBy: User;
-  createdAt: string;
-  likesCount: number;
-  playsCount: number;
-  isBookmarked: boolean;
-  thumbnailUrl?: string;
-  format: GameFormat;
-  language: string;
-}
-
-export interface FilterState {
-  topic?: string;
-  difficulty?: GameDifficulty;
-  complexity?: GameComplexity;
-  durationRange?: [number, number];
-  format?: GameFormat;
-  language?: string;
-  searchQuery?: string;
+export interface FilterState extends SharedFilterState {
   sortBy?: "trending" | "most_played" | "newest";
 }
 
@@ -43,5 +23,5 @@ export interface ChatMessage {
   role: "user" | "ai";
   content: string;
   timestamp: number;
-  relatedGame?: Game; // If the message generated a game
+  relatedGame?: Game;
 }

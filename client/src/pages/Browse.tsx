@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
 export default function Browse() {
-  const { filteredGames, filterGames, toggleLike, toggleBookmark } = useGames();
+  const { filterGames, toggleBookmark } = useGames();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<FilterState>({});
@@ -28,15 +28,14 @@ export default function Browse() {
   }, [searchQuery]);
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
-    const updated = { ...activeFilters, ...newFilters };
-    setActiveFilters(updated);
-    filterGames(updated);
+    setActiveFilters(prev => ({ ...prev, ...newFilters }));
   };
+  
+  const filteredGames = filterGames({ ...activeFilters, searchQuery });
 
   const clearFilters = () => {
     setActiveFilters({});
     setSearchQuery("");
-    filterGames({});
   };
 
   const topics = ["Math", "Science", "Languages", "Geography", "Programming"];
@@ -185,7 +184,6 @@ export default function Browse() {
               game={game}
               layoutType="grid"
               onPlay={setSelectedGame}
-              onLike={toggleLike}
               onBookmark={toggleBookmark}
             />
           ))

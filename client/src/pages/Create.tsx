@@ -65,7 +65,7 @@ export default function Create() {
     // Simulate AI delay
     setTimeout(() => {
       const newGame: Game = {
-        id: `gen-${Date.now()}`,
+        id: Date.now(),
         title: `Generated: ${topic || "Learning"} Game`,
         description: `A ${difficulty} level ${format} about ${topic || "various topics"} with ${complexity} mechanics.`,
         topic: topic || "General",
@@ -73,12 +73,13 @@ export default function Create() {
         difficulty,
         complexity,
         durationMinutes: parseInt(duration),
-        createdBy: { id: "ai", username: "AI Assistant", avatarUrl: "/images/avatar-placeholder.jpg" },
-        createdAt: new Date().toISOString(),
+        createdBy: { id: 0, username: "AI Assistant", avatarUrl: "/images/avatar-placeholder.jpg" },
+        createdAt: new Date(),
+        updatedAt: new Date(),
         likesCount: 0,
         playsCount: 0,
         isBookmarked: false,
-        thumbnailUrl: "/images/game-thumb-science.jpg", // Placeholder
+        thumbnailUrl: "/images/game-thumb-science.jpg",
         format,
         language: "English",
       };
@@ -193,7 +194,7 @@ export default function Create() {
             {msg.relatedGame && (
               <div className="mt-2 p-3 bg-white rounded-2xl shadow-soft border border-white/50 w-64 animate-in zoom-in-95 duration-300">
                 <div className="aspect-video rounded-lg bg-muted mb-2 overflow-hidden relative">
-                   <img src={msg.relatedGame.thumbnailUrl} className="w-full h-full object-cover" />
+                   <img src={msg.relatedGame.thumbnailUrl ?? "/images/game-thumb-science.jpg"} className="w-full h-full object-cover" />
                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                       <Play className="text-white fill-white" size={32} />
                    </div>
