@@ -1,38 +1,46 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Send, Sparkles, Save, Play } from "lucide-react";
-import { ChatMessage, Game, GameDifficulty, GameFormat, GameComplexity } from "@/types";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Send, Sparkles, Settings, MessageSquare, Loader2 } from "lucide-react";
+import { ChatMessage, GameDifficulty, GameFormat, GameComplexity } from "@/types";
 import { cn } from "@/lib/utils";
 import { useGames } from "@/hooks/useGames";
-import { GameModal } from "@/components/GameModal";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { TOPICS, FORMATS_BY_COMPLEXITY } from "@/lib/constants";
 
+type CreateMode = "prompt" | "parameters";
+
 export default function Create() {
-  const { addGame } = useGames();
+  const [mode, setMode] = useState<CreateMode>("prompt");
+  
+  // Prompt Mode State
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
       role: "ai",
-      content: "Hi! I'm your AI learning assistant. Tell me what kind of game you want to create, or use the settings above to get started.",
+      content: "Hi! I'm your AI learning assistant. Describe the game you want to create, and I'll build it for you. For example: 'Create a fun quiz about photosynthesis for 8th graders' or 'Make flashcards to help me learn Spanish verbs'.",
       timestamp: Date.now(),
     },
   ]);
-  const [inputValue, setInputValue] = useState("");
+  const [promptInput, setPromptInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [previewGame, setPreviewGame] = useState<Game | null>(null);
 
-  // Form State
+  // Parameters Mode State
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState<GameDifficulty>("Beginner");
   const [complexity, setComplexity] = useState<GameComplexity>("Basic");
   const [format, setFormat] = useState<GameFormat>("Quiz");
   const [duration, setDuration] = useState("5");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateGameMutation = trpc.ai.generateGame.useMutation();
+  const { refetch: refetchGames } = useGames();
 
   // Update format when complexity changes
   useEffect(() => {
@@ -40,7 +48,7 @@ export default function Create() {
     if (!availableFormats.includes(format)) {
       setFormat(availableFormats[0]);
     }
-  }, [complexity]);
+  }, [complexity, format]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -50,15 +58,9 @@ export default function Create() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const generateGameMutation = trpc.ai.generateGame.useMutation();
-  const { refetch: refetchGames } = useGames();
-
-  const handleSendMessage = async (text: string) => {
+  // Prompt Mode: Send natural language request
+  const handlePromptSubmit = async (text: string) => {
     if (!text.trim()) return;
-    if (!topic) {
-      toast.error("Please select a topic first");
-      return;
-    }
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -68,27 +70,27 @@ export default function Create() {
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    setInputValue("");
+    setPromptInput("");
     setIsTyping(true);
 
     try {
+      // For prompt mode, we'll use default parameters and let the AI interpret the prompt
       const result = await generateGameMutation.mutateAsync({
-        topic,
-        difficulty,
-        complexity,
-        format,
-        durationMinutes: parseInt(duration),
+        topic: "General", // AI will extract from prompt
+        difficulty: "Beginner",
+        complexity: "Basic",
+        format: "Quiz",
+        durationMinutes: 10,
         language: "English",
-        additionalInstructions: text,
+        additionalInstructions: text, // The full prompt goes here
       });
 
-      // Refresh games list
       await refetchGames();
 
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "ai",
-        content: `✨ I've created "${result.title}"! ${result.description} Click Preview to play it now, or find it in your Feed.`,
+        content: `✨ I've created "${result.title}"! ${result.description} You can find it in your Feed and start playing right away.`,
         timestamp: Date.now(),
       };
 
@@ -98,7 +100,7 @@ export default function Create() {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "ai",
-        content: "Sorry, I encountered an error while creating your game. Please try again.",
+        content: "Sorry, I encountered an error while creating your game. Please try again with a different prompt.",
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -109,187 +111,231 @@ export default function Create() {
     }
   };
 
-  const handleGenerateFromSettings = () => {
-    if (!topic) return;
-    handleSendMessage(`Create a ${duration}-minute ${difficulty} ${format} about ${topic}.`);
-  };
+  // Parameters Mode: Generate from structured inputs
+  const handleParametersSubmit = async () => {
+    if (!topic) {
+      toast.error("Please select a topic");
+      return;
+    }
 
-  const handleSaveGame = (game: Game) => {
-    addGame(game);
-    // Show toast (mock)
-    alert("Game saved to your library!");
+    setIsGenerating(true);
+
+    try {
+      const result = await generateGameMutation.mutateAsync({
+        topic,
+        difficulty,
+        complexity,
+        format,
+        durationMinutes: parseInt(duration),
+        language: "English",
+      });
+
+      await refetchGames();
+
+      toast.success(`"${result.title}" created successfully!`);
+    } catch (error) {
+      toast.error("Failed to generate game");
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background pb-20">
-      {/* Configuration Panel */}
-      <div className="p-4 bg-white shadow-sm z-10 rounded-b-3xl border-b border-border/50">
-        <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <Sparkles className="text-primary fill-primary/20" /> Create Game
-        </h1>
-        
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="col-span-2">
-            <Select value={topic} onValueChange={setTopic}>
-              <SelectTrigger className="rounded-xl bg-muted/30 border-transparent">
-                <SelectValue placeholder="Select Topic" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px]">
-                {TOPICS.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Select value={difficulty} onValueChange={(v: any) => setDifficulty(v)}>
-            <SelectTrigger className="rounded-xl bg-muted/30 border-transparent">
-              <SelectValue placeholder="Difficulty" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Beginner">Beginner</SelectItem>
-              <SelectItem value="Intermediate">Intermediate</SelectItem>
-              <SelectItem value="Advanced">Advanced</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={complexity} onValueChange={(v: any) => setComplexity(v)}>
-            <SelectTrigger className="rounded-xl bg-muted/30 border-transparent">
-              <SelectValue placeholder="Complexity" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Basic">Basic (Quiz, Flashcards)</SelectItem>
-              <SelectItem value="Normal">Normal (Interactive)</SelectItem>
-              <SelectItem value="Complex">Complex (RPG, Mission)</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={format} onValueChange={(v: any) => setFormat(v)}>
-            <SelectTrigger className="rounded-xl bg-muted/30 border-transparent">
-              <SelectValue placeholder="Format" />
-            </SelectTrigger>
-            <SelectContent>
-              {FORMATS_BY_COMPLEXITY[complexity].map((f) => (
-                <SelectItem key={f} value={f}>{f}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <Button 
-          className="w-full rounded-full bg-primary text-primary-foreground shadow-glow font-bold"
-          onClick={handleGenerateFromSettings}
-          disabled={!topic}
-        >
-          Generate Game
-        </Button>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-mint-50 to-cream-50">
+      {/* Header */}
+      <div className="p-6 pb-4">
+        <h1 className="text-2xl font-black mb-2">Create Game</h1>
+        <p className="text-sm text-muted-foreground">
+          Choose how you want to create your game
+        </p>
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/10">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={cn(
-              "flex flex-col max-w-[85%] animate-in fade-in slide-in-from-bottom-2",
-              msg.role === "user" ? "self-end items-end" : "self-start items-start"
-            )}
-          >
-            <div
-              className={cn(
-                "p-4 rounded-2xl text-sm shadow-sm",
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-tr-sm"
-                  : "bg-white text-foreground rounded-tl-sm border border-white/50"
-              )}
-            >
-              {msg.content}
-            </div>
+      {/* Mode Tabs */}
+      <Tabs value={mode} onValueChange={(v) => setMode(v as CreateMode)} className="flex-1 flex flex-col">
+        <TabsList className="mx-6 mb-4 grid w-auto grid-cols-2 bg-white/80 backdrop-blur-sm">
+          <TabsTrigger value="prompt" className="gap-2">
+            <MessageSquare size={16} />
+            Prompt Mode
+          </TabsTrigger>
+          <TabsTrigger value="parameters" className="gap-2">
+            <Settings size={16} />
+            Parameters Mode
+          </TabsTrigger>
+        </TabsList>
 
-            {msg.relatedGame && (
-              <div className="mt-2 p-3 bg-white rounded-2xl shadow-soft border border-white/50 w-64 animate-in zoom-in-95 duration-300">
-                <div className="aspect-video rounded-lg bg-muted mb-2 overflow-hidden relative">
-                   <img src={msg.relatedGame.thumbnailUrl ?? "/images/game-thumb-science.jpg"} className="w-full h-full object-cover" />
-                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                      <Play className="text-white fill-white" size={32} />
-                   </div>
+        {/* Prompt Mode */}
+        <TabsContent value="prompt" className="flex-1 flex flex-col m-0">
+          <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={cn(
+                  "flex",
+                  msg.role === "user" ? "justify-end" : "justify-start"
+                )}
+              >
+                <div
+                  className={cn(
+                    "max-w-[80%] rounded-2xl p-4 shadow-sm",
+                    msg.role === "user"
+                      ? "bg-mint-500 text-white"
+                      : "bg-white border border-gray-200"
+                  )}
+                >
+                  <p className="text-sm">{msg.content}</p>
                 </div>
-                <h3 className="font-bold text-sm truncate">{msg.relatedGame.title}</h3>
-                <p className="text-xs text-muted-foreground mb-3">{msg.relatedGame.difficulty} • {msg.relatedGame.durationMinutes}m</p>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    className="flex-1 rounded-full text-xs"
-                    onClick={() => setPreviewGame(msg.relatedGame!)}
-                  >
-                    Preview
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="flex-1 rounded-full text-xs"
-                    onClick={() => handleSaveGame(msg.relatedGame!)}
-                  >
-                    <Save size={14} className="mr-1" /> Save
-                  </Button>
+              </div>
+            ))}
+
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                  <div className="flex gap-2">
+                    <div className="w-2 h-2 bg-mint-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-2 h-2 bg-mint-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-2 h-2 bg-mint-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
                 </div>
               </div>
             )}
+
+            <div ref={messagesEndRef} />
           </div>
-        ))}
-        {isTyping && (
-          <div className="self-start bg-white p-4 rounded-2xl rounded-tl-sm shadow-sm border border-white/50">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" />
-              <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce delay-75" />
-              <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce delay-150" />
+
+          {/* Prompt Input */}
+          <div className="p-6 pt-0">
+            <div className="flex gap-3">
+              <Input
+                value={promptInput}
+                onChange={(e) => setPromptInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handlePromptSubmit(promptInput);
+                  }
+                }}
+                placeholder="Describe the game you want to create..."
+                className="flex-1 rounded-full h-12 px-6 border-2 border-mint-200 focus:border-mint-400"
+                disabled={isTyping}
+              />
+              <Button
+                onClick={() => handlePromptSubmit(promptInput)}
+                disabled={!promptInput.trim() || isTyping}
+                size="icon"
+                className="rounded-full h-12 w-12 bg-mint-500 hover:bg-mint-600"
+              >
+                <Send size={20} />
+              </Button>
             </div>
           </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+        </TabsContent>
 
-      {/* Input Area */}
-      <div className="p-4 bg-white border-t border-border/50">
-        {/* Suggestions */}
-        <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar mb-2">
-          {[
-            "Quiz on World Capitals",
-            "French Vocab Game",
-            "Basic Algebra Test"
-          ].map((s) => (
-            <Badge 
-              key={s} 
-              variant="outline" 
-              className="whitespace-nowrap cursor-pointer hover:bg-primary/10 hover:border-primary transition-colors py-1.5 px-3 rounded-full"
-              onClick={() => handleSendMessage(`Create a ${s}`)}
+        {/* Parameters Mode */}
+        <TabsContent value="parameters" className="flex-1 flex flex-col m-0 px-6 pb-6">
+          <Card className="p-6 space-y-6 bg-white/80 backdrop-blur-sm">
+            {/* Topic */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Topic</label>
+              <Select value={topic} onValueChange={setTopic}>
+                <SelectTrigger className="rounded-full h-12 border-2 border-mint-200">
+                  <SelectValue placeholder="Select a topic" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TOPICS.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Difficulty */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Knowledge Level</label>
+              <div className="flex gap-2">
+                {(["Beginner", "Intermediate", "Advanced"] as GameDifficulty[]).map((d) => (
+                  <Button
+                    key={d}
+                    variant={difficulty === d ? "default" : "outline"}
+                    onClick={() => setDifficulty(d)}
+                    className="flex-1 rounded-full"
+                  >
+                    {d}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Complexity */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Game Complexity</label>
+              <div className="flex gap-2">
+                {(["Basic", "Normal", "Complex"] as GameComplexity[]).map((c) => (
+                  <Button
+                    key={c}
+                    variant={complexity === c ? "default" : "outline"}
+                    onClick={() => setComplexity(c)}
+                    className="flex-1 rounded-full"
+                  >
+                    {c}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Format */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Game Format</label>
+              <Select value={format} onValueChange={(v) => setFormat(v as GameFormat)}>
+                <SelectTrigger className="rounded-full h-12 border-2 border-mint-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FORMATS_BY_COMPLEXITY[complexity].map((f) => (
+                    <SelectItem key={f} value={f}>
+                      {f}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Duration */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Duration (minutes)</label>
+              <Input
+                type="number"
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                min="1"
+                max="60"
+                className="rounded-full h-12 border-2 border-mint-200"
+              />
+            </div>
+
+            {/* Generate Button */}
+            <Button
+              onClick={handleParametersSubmit}
+              disabled={!topic || isGenerating}
+              className="w-full rounded-full h-14 text-lg font-bold bg-mint-500 hover:bg-mint-600"
             >
-              {s}
-            </Badge>
-          ))}
-        </div>
-        
-        <div className="flex gap-2">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSendMessage(inputValue)}
-            placeholder="Describe a game to create..."
-            className="rounded-full bg-muted/30 border-transparent focus:bg-white transition-all h-12 px-6"
-          />
-          <Button 
-            size="icon" 
-            className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-glow shrink-0"
-            onClick={() => handleSendMessage(inputValue)}
-            disabled={!inputValue.trim()}
-          >
-            <Send size={20} className="ml-0.5" />
-          </Button>
-        </div>
-      </div>
-
-      <GameModal
-        game={previewGame}
-        isOpen={!!previewGame}
-        onClose={() => setPreviewGame(null)}
-      />
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 animate-spin" size={20} />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2" size={20} />
+                  Generate Game
+                </>
+              )}
+            </Button>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

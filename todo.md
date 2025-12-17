@@ -19,3 +19,11 @@
 - [x] Update GameModal to render appropriate player based on format
 - [x] Test AI generation for all game formats
 - [x] Write unit tests for AI generation endpoints
+
+## Create Page Redesign
+
+- [x] Add mode toggle (Prompt vs Parameters) to Create page
+- [x] Implement Prompt Mode - clean chat interface for natural language game creation
+- [x] Implement Parameters Mode - structured form with dropdowns and Generate button
+- [x] Update AI endpoint to handle both prompt-based and parameter-based requests
+- [x] Test both creation modes with various inputs
