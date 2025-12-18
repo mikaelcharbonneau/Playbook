@@ -74,3 +74,20 @@
 
 - [x] Fix DialogTitle accessibility error in GameModal
 - [x] Fix GameEngine error: Cannot read properties of undefined (reading 'type')
+
+## Game Creation Bug Investigation
+
+- [ ] Test Parameters mode game creation
+- [ ] Test Prompt mode game creation
+- [ ] Analyze why newly created games are not playable
+- [ ] Fix the identified issues
+- [ ] Verify both creation modes produce playable games
+
+## Prompt Mode Chat UI Bug Fix
+
+- [x] Fix Prompt Mode chat bubbles not rendering with proper styling
+- [x] Fix AI welcome message disappearing after user submits a message
+- [x] Implement ChatBubble component with inline styles for consistent rendering
+- [x] Implement TypingIndicator component for AI processing feedback
+- [x] Test multi-turn conversation flow
+- [x] Verify chat bubbles maintain styling throughout conversation
