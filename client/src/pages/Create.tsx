@@ -77,13 +77,13 @@ export default function Create() {
       // For prompt mode, we'll use default parameters and let the AI interpret the prompt
       // Use Quiz as default since it's the most versatile format
       const result = await generateGameMutation.mutateAsync({
-        topic: "General", // AI will extract from prompt
-        difficulty: "Beginner",
-        complexity: "Basic",
-        format: "Quiz", // Default to Quiz (most versatile and always supported)
+        topic: "General",
+        subject: "General",
+        difficulty: "beginner",
+        complexity: "basic",
         durationMinutes: 10,
         language: "English",
-        additionalInstructions: text, // The full prompt goes here
+        customPrompt: text,
       });
 
       await refetchGames();
@@ -122,11 +122,23 @@ export default function Create() {
     setIsGenerating(true);
 
     try {
+      // Map display values to API values
+      const difficultyMap: Record<GameDifficulty, "beginner" | "intermediate" | "advanced"> = {
+        "Beginner": "beginner",
+        "Intermediate": "intermediate",
+        "Advanced": "advanced"
+      };
+      const complexityMap: Record<GameComplexity, "basic" | "standard" | "complex"> = {
+        "Basic": "basic",
+        "Normal": "standard",
+        "Complex": "complex"
+      };
+
       const result = await generateGameMutation.mutateAsync({
         topic,
-        difficulty,
-        complexity,
-        format,
+        subject: topic,
+        difficulty: difficultyMap[difficulty],
+        complexity: complexityMap[complexity],
         durationMinutes: parseInt(duration),
         language: "English",
       });
