@@ -73,3 +73,4 @@
 ## Bug Fixes
 
 - [x] Fix DialogTitle accessibility error in GameModal
+- [x] Fix GameEngine error: Cannot read properties of undefined (reading 'type')

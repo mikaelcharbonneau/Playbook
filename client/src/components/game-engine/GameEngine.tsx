@@ -53,22 +53,22 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
   
   // Timer
   const [timeRemaining, setTimeRemaining] = useState<number | null>(
-    spec.config.timeLimit > 0 ? spec.config.timeLimit : null
+    spec.config?.timeLimit > 0 ? spec.config.timeLimit : null
   );
 
   // Initialize game state
   function createInitialState(spec: GameSpec): GameState {
-    const firstSectionId = spec.progression.sectionOrder?.[0] 
-      || spec.progression.startSection 
-      || spec.content.sections[0]?.id 
+    const firstSectionId = spec.progression?.sectionOrder?.[0] 
+      || spec.progression?.startSection 
+      || spec.content?.sections?.[0]?.id 
       || "";
     
     return {
       currentSectionId: firstSectionId,
       currentItemIndex: 0,
       score: 0,
-      lives: spec.config.lives || Infinity,
-      hints: spec.config.maxHints || 0,
+      lives: spec.config?.lives || Infinity,
+      hints: spec.config?.maxHints || 0,
       timeElapsed: 0,
       answers: [],
       completedSections: [],
@@ -97,12 +97,12 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
   }, [phase, timeRemaining]);
 
   // Get current section
-  const currentSection = spec.content.sections.find(
+  const currentSection = spec.content?.sections?.find(
     s => s.id === gameState.currentSectionId
   );
 
   // Calculate progress
-  const totalSections = spec.content.sections.length;
+  const totalSections = spec.content?.sections?.length || 0;
   const completedCount = gameState.completedSections.length;
   const progressPercent = totalSections > 0 
     ? (completedCount / totalSections) * 100 
@@ -119,8 +119,8 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
   ) => {
     setGameState(prev => {
       const newStreak = isCorrect ? prev.streak + 1 : 0;
-      const streakBonus = spec.scoring.streakMultiplier > 1 && newStreak >= 3
-        ? Math.floor(pointsEarned * (spec.scoring.streakMultiplier - 1))
+      const streakBonus = (spec.scoring?.streakMultiplier || 1) > 1 && newStreak >= 3
+        ? Math.floor(pointsEarned * ((spec.scoring?.streakMultiplier || 1) - 1))
         : 0;
       
       const newLives = isCorrect ? prev.lives : prev.lives - 1;
@@ -144,10 +144,10 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
     });
 
     // Check for game over (no lives)
-    if (!isCorrect && gameState.lives <= 1 && spec.config.lives > 0) {
+    if (!isCorrect && gameState.lives <= 1 && (spec.config?.lives || 0) > 0) {
       setTimeout(() => handleGameEnd(), 1000);
     }
-  }, [gameState.lives, spec.config.lives, spec.scoring.streakMultiplier]);
+  }, [gameState.lives, spec.config?.lives, spec.scoring?.streakMultiplier]);
 
   // Handle section completion
   const handleSectionComplete = useCallback((sectionId: string) => {
@@ -155,7 +155,7 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
       const newCompletedSections = [...prev.completedSections, sectionId];
       
       // Find next section
-      const sectionOrder = spec.progression.sectionOrder || spec.content.sections.map(s => s.id);
+      const sectionOrder = spec.progression?.sectionOrder || spec.content?.sections?.map(s => s.id) || [];
       const currentIndex = sectionOrder.indexOf(sectionId);
       const nextSectionId = sectionOrder[currentIndex + 1];
 
@@ -175,7 +175,7 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
         currentItemIndex: 0,
       };
     });
-  }, [spec.progression.sectionOrder, spec.content.sections]);
+  }, [spec.progression?.sectionOrder, spec.content?.sections]);
 
   // Handle game end
   const handleGameEnd = useCallback(() => {
@@ -210,7 +210,7 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
   // Restart game
   const handleRestart = useCallback(() => {
     setGameState(createInitialState(spec));
-    setTimeRemaining(spec.config.timeLimit > 0 ? spec.config.timeLimit : null);
+    setTimeRemaining(spec.config?.timeLimit > 0 ? spec.config.timeLimit : null);
     setPhase("intro");
   }, [spec]);
 
@@ -278,33 +278,34 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
     }
   };
 
+  // Safe access to theme background
+  const backgroundStyle = spec.theme?.background?.type === "gradient" 
+    ? spec.theme.background.value 
+    : spec.theme?.background?.type === "solid"
+    ? spec.theme.background.value
+    : undefined;
+
   return (
     <div 
       className="h-full flex flex-col"
-      style={{
-        background: spec.theme.background.type === "gradient" 
-          ? spec.theme.background.value 
-          : spec.theme.background.type === "solid"
-          ? spec.theme.background.value
-          : undefined,
-      }}
+      style={{ background: backgroundStyle }}
     >
       {/* Header with stats */}
       {phase === "playing" && (
         <GameHeader
-          title={spec.metadata.title}
+          title={spec.metadata?.title || 'Game'}
           score={gameState.score}
-          lives={spec.config.lives > 0 ? gameState.lives : undefined}
-          hints={spec.config.hintsEnabled ? gameState.hints : undefined}
+          lives={(spec.config?.lives || 0) > 0 ? gameState.lives : undefined}
+          hints={spec.config?.hintsEnabled ? gameState.hints : undefined}
           timeRemaining={timeRemaining}
           streak={gameState.streak}
           onExit={onExit}
-          primaryColor={spec.theme.primaryColor}
+          primaryColor={spec.theme?.primaryColor || '#B6EBE7'}
         />
       )}
 
       {/* Progress bar */}
-      {phase === "playing" && spec.progression.showProgress && (
+      {phase === "playing" && spec.progression?.showProgress && (
         <div className="px-4 pb-2">
           <Progress value={progressPercent} className="h-2" />
           <p className="text-xs text-muted-foreground mt-1 text-center">
@@ -325,9 +326,9 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
               className="h-full"
             >
               <GameIntro
-                metadata={spec.metadata}
-                intro={spec.content.intro}
-                theme={spec.theme}
+                metadata={spec.metadata || { title: 'Game', description: '', subject: '', topic: '', difficulty: 'beginner', complexity: 'basic', estimatedMinutes: 10, learningObjectives: [], tags: [], language: 'English' }}
+                intro={spec.content?.intro}
+                theme={spec.theme || { primaryColor: '#B6EBE7', secondaryColor: '#7DD3C8', background: { type: 'solid', value: '#f5f5f5' }, icon: '🎮', mood: 'playful' }}
                 config={spec.config}
                 onStart={handleStart}
                 onExit={onExit}
@@ -356,8 +357,8 @@ export function GameEngine({ spec, onComplete, onExit }: GameEngineProps) {
               className="h-full"
             >
               <GameOutro
-                metadata={spec.metadata}
-                outro={spec.content.outro}
+                metadata={spec.metadata || { title: 'Game', description: '', subject: '', topic: '', difficulty: 'beginner', complexity: 'basic', estimatedMinutes: 10, learningObjectives: [], tags: [], language: 'English' }}
+                outro={spec.content?.outro}
                 gameState={gameState}
                 scoring={spec.scoring}
                 theme={spec.theme}
