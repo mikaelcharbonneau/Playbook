@@ -28,8 +28,9 @@ export const TOPICS = [
   "Visual Arts"
 ];
 
+// Only include formats with working game players
 export const FORMATS_BY_COMPLEXITY: Record<GameComplexity, GameFormat[]> = {
-  "Basic": ["Quiz", "Flashcards", "Memory", "Puzzle"],
-  "Normal": ["Racing", "Simulation", "Scenario"],
-  "Complex": ["RPG", "Strategy", "Adventure"]
+  "Basic": ["Quiz", "Flashcards", "Memory"],
+  "Normal": ["Quiz", "Flashcards", "Memory"], // TODO: Add Racing, Simulation, Scenario when players are built
+  "Complex": ["Quiz", "Flashcards", "Memory"] // TODO: Add RPG, Strategy, Adventure when players are built
 };

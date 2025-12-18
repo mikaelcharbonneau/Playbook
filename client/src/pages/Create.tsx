@@ -75,11 +75,12 @@ export default function Create() {
 
     try {
       // For prompt mode, we'll use default parameters and let the AI interpret the prompt
+      // Use Quiz as default since it's the most versatile format
       const result = await generateGameMutation.mutateAsync({
         topic: "General", // AI will extract from prompt
         difficulty: "Beginner",
         complexity: "Basic",
-        format: "Quiz",
+        format: "Quiz", // Default to Quiz (most versatile and always supported)
         durationMinutes: 10,
         language: "English",
         additionalInstructions: text, // The full prompt goes here

@@ -27,3 +27,9 @@
 - [x] Implement Parameters Mode - structured form with dropdowns and Generate button
 - [x] Update AI endpoint to handle both prompt-based and parameter-based requests
 - [x] Test both creation modes with various inputs
+
+## Fix Game Playability
+
+- [x] Update FORMATS_BY_COMPLEXITY to only include formats with working players
+- [x] Ensure all generated games use supported formats (Quiz, Flashcards, Memory)
+- [x] Test that all created games are playable
