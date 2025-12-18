@@ -1,4 +1,5 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { Game } from "@/types";
 import { X } from "lucide-react";
@@ -69,6 +70,9 @@ export function GameModal({ game, isOpen, onClose }: GameModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-none shadow-2xl bg-background">
+        <VisuallyHidden>
+          <DialogTitle>{game.title}</DialogTitle>
+        </VisuallyHidden>
         {/* Header */}
         <div className="p-6 pb-4 bg-gradient-to-b from-white to-transparent z-10 border-b">
           <div className="flex items-center justify-between">

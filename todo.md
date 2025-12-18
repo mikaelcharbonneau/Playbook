@@ -69,3 +69,7 @@
 - [x] Update game creation flow to use new system
 - [x] Restore original format options per complexity level
 - [x] Test end-to-end game creation and play
+
+## Bug Fixes
+
+- [x] Fix DialogTitle accessibility error in GameModal
