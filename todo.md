@@ -91,3 +91,12 @@
 - [x] Implement TypingIndicator component for AI processing feedback
 - [x] Test multi-turn conversation flow
 - [x] Verify chat bubbles maintain styling throughout conversation
+
+
+## OpenAI GPT-5 Integration (Completed)
+
+- [x] Configure OpenAI API credentials (API key, org ID, project ID)
+- [x] Replace Forge API with OpenAI API in AI service
+- [x] Upgrade model from gpt-4o-mini to GPT-5
+- [x] Update to use max_completion_tokens parameter for GPT-5
+- [x] Test game generation with GPT-5 successfully

@@ -25,8 +25,11 @@ interface GenerateGameRequest {
   additionalInstructions?: string;
 }
 
-const FORGE_API_URL = ENV.forgeApiUrl;
-const FORGE_API_KEY = ENV.forgeApiKey;
+// OpenAI Configuration
+const OPENAI_API_URL = "https://api.openai.com/v1";
+const OPENAI_API_KEY = ENV.openaiApiKey;
+const OPENAI_ORG_ID = ENV.openaiOrgId;
+const OPENAI_PROJECT_ID = ENV.openaiProjectId;
 
 function buildSystemPrompt(format: GameFormat, complexity: GameComplexity): string {
   const basePrompt = `You are an expert educational game designer. Your task is to create engaging, educational game content that is accurate, well-structured, and appropriate for the specified difficulty level.
@@ -224,9 +227,9 @@ Remember: Respond with ONLY the JSON object. No markdown, no code blocks, no exp
 export async function generateGameContent(req: GenerateGameRequest): Promise<GameContent> {
   try {
     const response = await axios.post(
-      `${FORGE_API_URL}/v1/chat/completions`,
+      `${OPENAI_API_URL}/chat/completions`,
       {
-        model: "gpt-4o-mini",
+        model: "gpt-5",
         messages: [
           {
             role: "system",
@@ -238,12 +241,14 @@ export async function generateGameContent(req: GenerateGameRequest): Promise<Gam
           },
         ],
         temperature: 0.8,
-        max_tokens: 4000,
+        max_completion_tokens: 4000,
       },
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${FORGE_API_KEY}`,
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+          "OpenAI-Organization": OPENAI_ORG_ID,
+          "OpenAI-Project": OPENAI_PROJECT_ID,
         },
       }
     );
@@ -273,9 +278,9 @@ export async function generateGameContent(req: GenerateGameRequest): Promise<Gam
 export async function generateGameTitle(topic: string, format: GameFormat): Promise<string> {
   try {
     const response = await axios.post(
-      `${FORGE_API_URL}/v1/chat/completions`,
+      `${OPENAI_API_URL}/chat/completions`,
       {
-        model: "gpt-4o-mini",
+        model: "gpt-5",
         messages: [
           {
             role: "system",
@@ -287,12 +292,14 @@ export async function generateGameTitle(topic: string, format: GameFormat): Prom
           },
         ],
         temperature: 0.9,
-        max_tokens: 50,
+        max_completion_tokens: 50,
       },
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${FORGE_API_KEY}`,
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+          "OpenAI-Organization": OPENAI_ORG_ID,
+          "OpenAI-Project": OPENAI_PROJECT_ID,
         },
       }
     );
@@ -311,9 +318,9 @@ export async function generateGameDescription(
 ): Promise<string> {
   try {
     const response = await axios.post(
-      `${FORGE_API_URL}/v1/chat/completions`,
+      `${OPENAI_API_URL}/chat/completions`,
       {
-        model: "gpt-4o-mini",
+        model: "gpt-5",
         messages: [
           {
             role: "system",
@@ -325,12 +332,14 @@ export async function generateGameDescription(
           },
         ],
         temperature: 0.8,
-        max_tokens: 100,
+        max_completion_tokens: 100,
       },
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${FORGE_API_KEY}`,
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+          "OpenAI-Organization": OPENAI_ORG_ID,
+          "OpenAI-Project": OPENAI_PROJECT_ID,
         },
       }
     );
