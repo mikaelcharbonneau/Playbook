@@ -18,6 +18,9 @@ export const users = pgTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: varchar("role", { length: 20 }).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  // Note: PostgreSQL doesn't support automatic timestamp updates like MySQL's onUpdateNow()
+  // The updatedAt field must be manually set in all update operations
+  // See server/db.ts for update operations that handle this
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
@@ -45,6 +48,9 @@ export const games = pgTable("games", {
   createdById: integer("createdById").notNull(),
   gameContent: text("gameContent"), // JSON string containing the actual game data (questions, scenarios, etc.)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  // Note: PostgreSQL doesn't support automatic timestamp updates like MySQL's onUpdateNow()
+  // The updatedAt field must be manually set in all update operations
+  // See server/db.ts for update operations that handle this
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 

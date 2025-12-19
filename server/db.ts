@@ -20,7 +20,13 @@ export async function getDb() {
         connectionString += (connectionString.includes('?') ? '&' : '?') + 'sslmode=require';
       }
       
-      console.log("[Database] Connecting to:", connectionString.replace(/:[^:@]+@/, ':****@'));
+      // Mask password in connection string (handles passwords with colons)
+      // Format: postgresql://user:password@host -> postgresql://user:****@host
+      // Match ://username:password@ and replace only the password portion
+      // Use /:[^@]*@/ to match everything between : and @ (handles passwords with colons)
+      // But we need to match after :// to avoid matching the protocol separator
+      const maskedConnectionString = connectionString.replace(/:\/\/([^:]+):[^@]*@/, '://$1:****@');
+      console.log("[Database] Connecting to:", maskedConnectionString);
       
       // Create postgres client
       _client = postgres(connectionString, {
