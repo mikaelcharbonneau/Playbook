@@ -1,18 +1,49 @@
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { InsertUser, users, games, InsertGame, bookmarks, InsertBookmark } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _client: ReturnType<typeof postgres> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // Use connection string directly - postgres library handles it well
+      // Add ?options=-c%20ip_family=ipv4 to force IPv4 if needed
+      let connectionString = process.env.DATABASE_URL;
+      
+      // Ensure SSL is required for Supabase
+      if (!connectionString.includes('sslmode=')) {
+        connectionString += (connectionString.includes('?') ? '&' : '?') + 'sslmode=require';
+      }
+      
+      console.log("[Database] Connecting to:", connectionString.replace(/:[^:@]+@/, ':****@'));
+      
+      // Create postgres client
+      _client = postgres(connectionString, {
+        connect_timeout: 10,
+        max: 1, // Single connection for now
+      });
+      
+      _db = drizzle(_client);
+      
+      // Test the connection
+      await _client`SELECT 1`;
+      console.log("[Database] ✅ Connected successfully to PostgreSQL");
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.error("[Database] ❌ Failed to connect:", error);
+      if (error instanceof Error) {
+        console.error("[Database] Error message:", error.message);
+        if ('cause' in error) {
+          const cause = (error as any).cause;
+          console.error("[Database] Cause:", cause?.message || cause);
+        }
+      }
       _db = null;
+      _client = null;
     }
   }
   return _db;
@@ -64,11 +95,16 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.lastSignedIn = new Date();
     }
 
+    // Always update updatedAt on conflict
+    updateSet.updatedAt = new Date();
+
     if (Object.keys(updateSet).length === 0) {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    // PostgreSQL uses onConflictDoUpdate instead of onDuplicateKeyUpdate
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet,
     });
   } catch (error) {
@@ -103,7 +139,12 @@ export async function getAllGames() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.select().from(games).orderBy(desc(games.createdAt));
+  try {
+    return await db.select().from(games).orderBy(desc(games.createdAt));
+  } catch (error) {
+    console.error("[Database] Error in getAllGames:", error);
+    throw error;
+  }
 }
 
 export async function getGameById(id: number) {
@@ -119,7 +160,10 @@ export async function updateGameStats(gameId: number, field: 'likesCount' | 'pla
   if (!db) throw new Error("Database not available");
 
   await db.update(games)
-    .set({ [field]: sql`${games[field]} + ${increment}` })
+    .set({ 
+      [field]: sql`${games[field]} + ${increment}`,
+      updatedAt: new Date()
+    })
     .where(eq(games.id, gameId));
 }
 

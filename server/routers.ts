@@ -203,6 +203,9 @@ export const appRouter = router({
       return games.map(game => ({
         ...game,
         tags: JSON.parse(game.tags),
+        difficulty: game.difficulty as "Beginner" | "Intermediate" | "Advanced",
+        complexity: game.complexity as "Basic" | "Normal" | "Complex",
+        format: game.format as "Quiz" | "Flashcards" | "Memory" | "Puzzle" | "Racing" | "Simulation" | "Scenario" | "RPG" | "Strategy" | "Adventure" | "Other",
       }));
     }),
 
@@ -215,6 +218,9 @@ export const appRouter = router({
           ...game,
           tags: JSON.parse(game.tags),
           gameContent: game.gameContent ? JSON.parse(game.gameContent) : null,
+          difficulty: game.difficulty as "Beginner" | "Intermediate" | "Advanced",
+          complexity: game.complexity as "Basic" | "Normal" | "Complex",
+          format: game.format as "Quiz" | "Flashcards" | "Memory" | "Puzzle" | "Racing" | "Simulation" | "Scenario" | "RPG" | "Strategy" | "Adventure" | "Other",
         };
       }),
 
